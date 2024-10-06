@@ -25,3 +25,15 @@ Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To u
 ## Further help
 
 To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+
+## Chart eklerken yaptiklarim
+- ng generate component chart 
+- npm install ng2-charts --save
+- npm install chart.js --save 
+- <app-chart></app-chart> eklediğimiz componentin selectorune göre app.component.html'e ekliyoruz
+- main.ts de chart componentine register yapıyoruz
+- app.service'de datayı alıyoruz
+- app.module'e chart componenti ve chart librarylerini ekliyoruz
+- chart.component.ts'de fonksyionlar ve özellikler
+- chart.component.html'de divi giriyoruz
+
