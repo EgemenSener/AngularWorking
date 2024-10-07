@@ -17,14 +17,28 @@ export class ChartComponent implements OnInit {
     responsive: true,
   };
 
-  public barChartData: ChartConfiguration<'bar'>['data'] = {
-    labels: [], // Will be populated with category names
+  // Now we have two chart data sets
+  public barChartData1: ChartConfiguration<'bar'>['data'] = {
+    labels: [], // Will be populated with category names for Chart 1
     datasets: [
       {
-        data: [], // Will be populated with category counts
-        label: 'Category Count',
+        data: [], // Will be populated with category counts for Chart 1
+        label: 'Category Count 1',
         backgroundColor: 'rgba(75, 192, 192, 0.2)',
         borderColor: 'rgba(75, 192, 192, 1)',
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  public barChartData2: ChartConfiguration<'bar'>['data'] = {
+    labels: [], // Will be populated with category names for Chart 2
+    datasets: [
+      {
+        data: [], // Will be populated with category counts for Chart 2
+        label: 'Category Count 2',
+        backgroundColor: 'rgba(153, 102, 255, 0.2)',
+        borderColor: 'rgba(153, 102, 255, 1)',
         borderWidth: 1,
       },
     ],
@@ -45,9 +59,13 @@ export class ChartComponent implements OnInit {
 
   getCategoryData(): void {
     this.dataService.getCategoryData().subscribe(data => {
-      // Process data to extract labels and counts
-      this.barChartData.labels = data.map(item => item.category); // Extract category names
-      this.barChartData.datasets[0].data = data.map(item => item.count); // Extract category counts
+      // Assuming we want to use the same data but process it differently for two charts
+      this.barChartData1.labels = data.map(item => item.category); // Extract category names for Chart 1
+      this.barChartData1.datasets[0].data = data.map(item => item.count); // Extract category counts for Chart 1
+
+      // Example: Creating different data for Chart 2 by multiplying counts by 2
+      this.barChartData2.labels = data.map(item => item.category); // Extract category names for Chart 2
+      this.barChartData2.datasets[0].data = data.map(item => item.count * 2); // Extract modified counts for Chart 2
     });
   }
 }
