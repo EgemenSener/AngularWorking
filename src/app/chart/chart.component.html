@@ -1,12 +1,13 @@
 <div *ngIf="isBrowser" class="row">
-        <div class="col">
+        <div class="col-6">
                 <h3>Chart 1</h3>
                 <canvas baseChart [data]="barChartData1" [options]="barChartOptions" chartType="bar">
                 </canvas>
         </div>
-        <div class="col">
-                <h3>Chart 2</h3>
-                <canvas baseChart [data]="barChartData2" [options]="barChartOptions" chartType="bar">
+        <div>
+                <h3>Pie Chart</h3>
+                <canvas baseChart [data]="pieChartData" [options]="pieChartOptions" chartType="pie">
+                        <!-- Set chartType to 'pie' -->
                 </canvas>
         </div>
 </div>

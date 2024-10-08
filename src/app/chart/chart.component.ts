@@ -2,7 +2,7 @@ import { Component, OnInit, Inject } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { PLATFORM_ID } from '@angular/core';
 import { BaseChartDirective } from 'ng2-charts';
-import { ChartConfiguration, ChartOptions } from 'chart.js';
+import { ChartConfiguration, ChartOptions, Chart, ChartEvent } from 'chart.js';
 import { DataService } from '../app.service'; // Import your service
 
 @Component({
@@ -15,14 +15,16 @@ import { DataService } from '../app.service'; // Import your service
 export class ChartComponent implements OnInit {
   public barChartOptions: ChartOptions = {
     responsive: true,
+    onClick: (event: ChartEvent, activeElements: any[], chart: Chart) => {
+      this.onChartClick(event, chart);
+    },
   };
 
-  // Now we have two chart data sets
   public barChartData1: ChartConfiguration<'bar'>['data'] = {
-    labels: [], // Will be populated with category names for Chart 1
+    labels: [],
     datasets: [
       {
-        data: [], // Will be populated with category counts for Chart 1
+        data: [],
         label: 'Category Count 1',
         backgroundColor: 'rgba(75, 192, 192, 0.2)',
         borderColor: 'rgba(75, 192, 192, 1)',
@@ -31,18 +33,29 @@ export class ChartComponent implements OnInit {
     ],
   };
 
-  public barChartData2: ChartConfiguration<'bar'>['data'] = {
-    labels: [], // Will be populated with category names for Chart 2
+  public pieChartOptions: ChartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        display: true,
+        position: 'top'
+      }
+    }
+  };
+
+  public pieChartData: ChartConfiguration<'pie'>['data'] = {
+    labels: [], // Labels for pie chart slices
     datasets: [
       {
-        data: [], // Will be populated with category counts for Chart 2
-        label: 'Category Count 2',
-        backgroundColor: 'rgba(153, 102, 255, 0.2)',
-        borderColor: 'rgba(153, 102, 255, 1)',
+        data: [], // Values for each slice
+        backgroundColor: ['rgba(255, 99, 132, 0.2)', 'rgba(54, 162, 235, 0.2)'],
+        borderColor: ['rgba(255, 99, 132, 1)', 'rgba(54, 162, 235, 1)'],
         borderWidth: 1,
       },
     ],
   };
+
+  public showPieChart = false;
 
   isBrowser: boolean;
 
@@ -54,18 +67,49 @@ export class ChartComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.getCategoryData(); // Call the method to get data on initialization
+    this.getCategoryData();
   }
 
   getCategoryData(): void {
     this.dataService.getCategoryData().subscribe(data => {
-      // Assuming we want to use the same data but process it differently for two charts
-      this.barChartData1.labels = data.map(item => item.category); // Extract category names for Chart 1
-      this.barChartData1.datasets[0].data = data.map(item => item.count); // Extract category counts for Chart 1
-
-      // Example: Creating different data for Chart 2 by multiplying counts by 2
-      this.barChartData2.labels = data.map(item => item.category); // Extract category names for Chart 2
-      this.barChartData2.datasets[0].data = data.map(item => item.count * 2); // Extract modified counts for Chart 2
+      this.barChartData1.labels = data.map(item => item.category);
+      this.barChartData1.datasets[0].data = data.map(item => item.count);
     });
+  }
+
+  onChartClick(event: ChartEvent, chart: Chart): void {
+    const chartInstance = chart;
+    if (event.native) {
+      const points = chartInstance.getElementsAtEventForMode(
+        event.native as Event, 'nearest', { intersect: true }, true
+      );
+
+      if (points.length) {
+        const firstPoint = points[0];
+        const datasetIndex = firstPoint.datasetIndex;
+        const dataIndex = firstPoint.index;
+
+        // Logging label and value to check the values being clicked
+        const label = chartInstance.data.labels?.[dataIndex];
+        const value = chartInstance.data.datasets[datasetIndex].data[dataIndex];
+        console.log('Clicked label:', label);
+        console.log('Clicked value:', value);
+
+        if (label && value !== undefined) {
+          this.updatePieChart(label as string, value as number);
+        }
+      }
+    }
+  }
+
+  updatePieChart(label: string, value: number): void {
+    this.pieChartData.labels = [label]; // Set the clicked label
+    this.pieChartData.datasets[0].data = [value]; // Set the clicked value
+
+    // Force the pie chart to re-render
+    this.showPieChart = false;
+    setTimeout(() => {
+      this.showPieChart = true;
+    }, 0);
   }
 }
