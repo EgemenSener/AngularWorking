@@ -2,7 +2,7 @@ import { Component, OnInit, Inject, AfterViewInit } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { PLATFORM_ID } from '@angular/core';
 import { BaseChartDirective } from 'ng2-charts';
-import { ChartConfiguration, ChartOptions, Chart, ChartEvent } from 'chart.js';
+import { ChartConfiguration, ChartOptions, Chart, ChartEvent, registerables } from 'chart.js';
 import { DataService } from '../app.service'; // Import your service
 
 @Component({
@@ -15,12 +15,14 @@ import { DataService } from '../app.service'; // Import your service
 export class ChartComponent implements AfterViewInit {
 
   isBrowser: boolean;
+  categoryData: any[] = [];
 
   constructor(
     @Inject(PLATFORM_ID) private platformId: any,
     private dataService: DataService // Inject the service
   ) {
     this.isBrowser = isPlatformBrowser(this.platformId);
+    Chart.register(...registerables);
   }
 
   ngAfterViewInit(): void {
@@ -29,30 +31,8 @@ export class ChartComponent implements AfterViewInit {
     }
   }
 
-  public pieChartOptions: ChartOptions = {
-    responsive: true,
-    plugins: {
-      legend: {
-        display: true,
-        position: 'top'
-      }
-    }
-  };
-
-  public pieChartData: ChartConfiguration<'pie'>['data'] = {
-    labels: [], // Labels for pie chart slices
-    datasets: [
-      {
-        data: [], // Values for each slice
-        backgroundColor: ['rgba(255, 99, 132, 0.2)', 'rgba(54, 162, 235, 0.2)'],
-        borderColor: ['rgba(255, 99, 132, 1)', 'rgba(54, 162, 235, 1)'],
-        borderWidth: 1,
-      },
-    ],
-  };
-
   public showPieChart = false;
-
+  
   getCategoryData(): void {
     this.dataService.getCategoryData().subscribe(data => {
       const barChart1 = document.getElementById('barChart1') as HTMLCanvasElement;
@@ -84,6 +64,27 @@ export class ChartComponent implements AfterViewInit {
   }
 
   onChartClick(event: ChartEvent, chart: Chart): void {
+    const pieChart1 = document.getElementById('pieChart1') as HTMLCanvasElement;
+    new Chart(pieChart1, {
+      type: 'pie',
+      data: {
+        labels: [
+          'Red',
+          'Blue',
+          'Yellow'
+        ],
+        datasets: [{
+          label: 'My First Dataset',
+          data: [300, 50, 100],
+          backgroundColor: [
+            'rgb(255, 99, 132)',
+            'rgb(54, 162, 235)',
+            'rgb(255, 205, 86)'
+          ],
+          hoverOffset: 4
+        }]
+      }
+    });
     const chartInstance = chart;
     if (event.native) {
       const points = chartInstance.getElementsAtEventForMode(
@@ -109,9 +110,8 @@ export class ChartComponent implements AfterViewInit {
   }
 
   updatePieChart(label: string, value: number): void {
-    this.pieChartData.labels = [label]; // Set the clicked label
-    this.pieChartData.datasets[0].data = [value]; // Set the clicked value
-
+    //this.pieChartData.labels = [label]; // Set the clicked label
+    //this.pieChartData.datasets[0].data = [value]; // Set the clicked value
     // Force the pie chart to re-render
     this.showPieChart = false;
     setTimeout(() => {
