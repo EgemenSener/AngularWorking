@@ -1,4 +1,4 @@
-import { Component, OnInit, Inject } from '@angular/core';
+import { Component, OnInit, Inject, AfterViewInit } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { PLATFORM_ID } from '@angular/core';
 import { BaseChartDirective } from 'ng2-charts';
@@ -12,26 +12,22 @@ import { DataService } from '../app.service'; // Import your service
   templateUrl: './chart.component.html',
   styleUrls: ['./chart.component.scss']
 })
-export class ChartComponent implements OnInit {
-  public barChartOptions: ChartOptions = {
-    responsive: true,
-    onClick: (event: ChartEvent, activeElements: any[], chart: Chart) => {
-      this.onChartClick(event, chart);
-    },
-  };
+export class ChartComponent implements AfterViewInit {
 
-  public barChartData1: ChartConfiguration<'bar'>['data'] = {
-    labels: [],
-    datasets: [
-      {
-        data: [],
-        label: 'Category Count 1',
-        backgroundColor: 'rgba(75, 192, 192, 0.2)',
-        borderColor: 'rgba(75, 192, 192, 1)',
-        borderWidth: 1,
-      },
-    ],
-  };
+  isBrowser: boolean;
+
+  constructor(
+    @Inject(PLATFORM_ID) private platformId: any,
+    private dataService: DataService // Inject the service
+  ) {
+    this.isBrowser = isPlatformBrowser(this.platformId);
+  }
+
+  ngAfterViewInit(): void {
+    if (this.isBrowser) {
+      this.getCategoryData();
+    }
+  }
 
   public pieChartOptions: ChartOptions = {
     responsive: true,
@@ -57,23 +53,33 @@ export class ChartComponent implements OnInit {
 
   public showPieChart = false;
 
-  isBrowser: boolean;
-
-  constructor(
-    @Inject(PLATFORM_ID) private platformId: any,
-    private dataService: DataService // Inject the service
-  ) {
-    this.isBrowser = isPlatformBrowser(this.platformId);
-  }
-
-  ngOnInit(): void {
-    this.getCategoryData();
-  }
-
   getCategoryData(): void {
     this.dataService.getCategoryData().subscribe(data => {
-      this.barChartData1.labels = data.map(item => item.category);
-      this.barChartData1.datasets[0].data = data.map(item => item.count);
+      const barChart1 = document.getElementById('barChart1') as HTMLCanvasElement;
+      new Chart(barChart1, {
+        type: 'bar',  // Bar chart
+        data: {
+          labels: data.map(item => item.category),
+          datasets: [{
+            label: '# of Votes',
+            data: data.map(item => item.count),
+            borderWidth: 1,
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            borderColor: 'rgba(75, 192, 192, 1)'
+          }]
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: true  // Ensure y-axis starts at 0
+            }
+          },
+          responsive: true,
+          onClick: (event: ChartEvent, activeElements: any[], chart: Chart) => {
+            this.onChartClick(event, chart);
+          },
+        }
+      });
     });
   }
 
