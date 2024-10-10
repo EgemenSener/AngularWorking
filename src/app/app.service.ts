@@ -8,17 +8,17 @@ export class DataService {
   private apiUrl = 'https://api.example.com/categories'; // Buraya API URL'nizi koyun
 
   private sampleDataArr = [
-    { "category": "Elektronik", "count": 10 },
-    { "category": "Mobilya", "count": 7 },
-    { "category": "Kırtasiye", "count": 12 },
-    { "category": "Giyim", "count": 5 }
+    { "itemCode": "DON-TRE-TSE", "totalQty": 10, "companies": [{ "cardName": "Aselsam", "plannedQty": 10 }] },
+    { "itemCode": "DON-TRE-TSE", "totalQty": 10, "companies": [{ "cardName": "Aselsam", "plannedQty": 20 }] },
+    { "itemCode": "DON-TRE-TSE", "totalQty": 10, "companies": [{ "cardName": "Aselsam", "plannedQty": 30 }] },
+    { "itemCode": "DON-TRE-TSE", "totalQty": 10, "companies": [{ "cardName": "Aselsam", "plannedQty": 40 }] }
   ]
-  
+
   /*getCategoryData(): Observable<any[]> {
     return this.http.get<any[]>(this.apiUrl);
     */
-   getCategoryData(): Observable<any[]> {
+  getCategoryData(): Observable<any[]> {
     return of(this.sampleDataArr);
-   }
-  
+  }
+
 }

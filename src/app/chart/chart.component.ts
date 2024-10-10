@@ -3,9 +3,7 @@ import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { PLATFORM_ID } from '@angular/core';
 import { BaseChartDirective } from 'ng2-charts';
 import { Chart, registerables } from 'chart.js';
-import { finalize, map } from 'rxjs';
-import { FGetEntityExpression } from '../../../../../service-proxies/expressions/FGetEntityExpression';
-import { FSearchExpression, QualityServiceProxy } from '../../../../../service-proxies/service-proxies';
+import { DataService } from '../app.service';
 
 @Component({
   selector: 'app-chart',
@@ -23,7 +21,7 @@ export class ChartComponent implements AfterViewInit {
 
   constructor(
     @Inject(PLATFORM_ID) private platformId: any,
-    private qualityService: QualityServiceProxy
+    private dataService: DataService
   ) {
     this.isBrowser = isPlatformBrowser(this.platformId);
     Chart.register(...registerables);
@@ -36,27 +34,8 @@ export class ChartComponent implements AfterViewInit {
   }
 
   getCategoryData(): void {
-    const searchParam: FGetEntityExpression = new FGetEntityExpression();
-    const fseachParm1: FSearchExpression = new FSearchExpression();
-    searchParam.skipCount = 0
-    searchParam.orderBy = "plannedQty desc"
-    fseachParm1.propName = "status"
-    fseachParm1.searchOperator = 0
-    fseachParm1.searchAndOrOperator = 0
-    fseachParm1.value1 = "Planlanmis"
-    searchParam.searchExpressionList = [fseachParm1]
-    // İlk olarak veriyi alıyoruz ve sonra grafikleri güncelliyoruz
-    this.qualityService.countOrders(searchParam).pipe(
-      finalize(() => { }),
-      map((datas: any) => ({
-        data: datas.items,
-        totalCount: datas.totalCount,
-        summary: null,
-        groupCount: 0
-      }))
-    ).toPromise().then((result: any) => {
-      this.categoryData = result.data;
-      const data = result.data;
+    this.dataService.getCategoryData().subscribe(data => {
+      this.categoryData = data;
       console.log(data);
       const barChart1 = document.getElementById('barCharPlanlanmis') as HTMLCanvasElement;
       const chart = new Chart(barChart1, {
@@ -107,10 +86,12 @@ export class ChartComponent implements AfterViewInit {
       this.pieChartInstance = new Chart(pieChart1, {
         type: 'pie',
         data: {
-          labels: clickedData.companies.map(item => item.cardName),
+          labels: clickedData.companies.map((item: { cardName: any; }) => item.cardName),
           datasets: [{
             label: 'Şirket Dağılımı',
-            data: clickedData.companies.map(item => item.plannedQty),
+            data: clickedData.companies.map((item: {
+              plannedQty: any; cardName: any
+            }) => item.plannedQty),
             backgroundColor: [
               'rgb(255, 99, 132)',
               'rgb(54, 162, 235)',
@@ -122,8 +103,8 @@ export class ChartComponent implements AfterViewInit {
       });
       this.showPieChart = true
     } else {
-      this.pieChartInstance.data.labels = clickedData.companies.map(item => item.cardName);
-      this.pieChartInstance.data.datasets[0].data = clickedData.companies.map(item => item.plannedQty);
+      this.pieChartInstance.data.labels = clickedData.companies.map((item: { cardName: any; }) => item.cardName);
+      this.pieChartInstance.data.datasets[0].data = clickedData.companies.map((item: { plannedQty: any; }) => item.plannedQty);
       this.pieChartInstance.update();
     }
   }
