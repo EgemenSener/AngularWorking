@@ -1,12 +1,11 @@
-<div *ngIf="isBrowser" class="row">
-        <div class="col-6">
-                <h3>Chart 1</h3>
-                <canvas id="barChart1">
-                </canvas>
+<div *ngIf="isBrowser" class="container">
+        <div class="left-component">
+            <h3>Planlanmış</h3>
+            <canvas id="barCharPlanlanmis">
+            </canvas>
         </div>
-        <div>
-                <h3>Pie Chart</h3>
-                <canvas id="pieChart1">
-                </canvas>
+        <div class="right-component" ng-if="showPieChart">
+            <canvas id="pieChart1">   
+            </canvas>
         </div>
-</div>ƒ
+    </div>

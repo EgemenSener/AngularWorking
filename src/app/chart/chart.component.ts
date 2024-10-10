@@ -1,9 +1,11 @@
-import { Component, OnInit, Inject, AfterViewInit } from '@angular/core';
+import { Component, AfterViewInit, Inject } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { PLATFORM_ID } from '@angular/core';
 import { BaseChartDirective } from 'ng2-charts';
-import { ChartConfiguration, ChartOptions, Chart, ChartEvent, registerables } from 'chart.js';
-import { DataService } from '../app.service'; // Import your service
+import { Chart, registerables } from 'chart.js';
+import { finalize, map } from 'rxjs';
+import { FGetEntityExpression } from '../../../../../service-proxies/expressions/FGetEntityExpression';
+import { FSearchExpression, QualityServiceProxy } from '../../../../../service-proxies/service-proxies';
 
 @Component({
   selector: 'app-chart',
@@ -16,10 +18,12 @@ export class ChartComponent implements AfterViewInit {
 
   isBrowser: boolean;
   categoryData: any[] = [];
+  public showPieChart = false;
+  pieChartInstance: any;
 
   constructor(
     @Inject(PLATFORM_ID) private platformId: any,
-    private dataService: DataService // Inject the service
+    private qualityService: QualityServiceProxy
   ) {
     this.isBrowser = isPlatformBrowser(this.platformId);
     Chart.register(...registerables);
@@ -31,91 +35,96 @@ export class ChartComponent implements AfterViewInit {
     }
   }
 
-  public showPieChart = false;
-  
   getCategoryData(): void {
-    this.dataService.getCategoryData().subscribe(data => {
-      const barChart1 = document.getElementById('barChart1') as HTMLCanvasElement;
-      new Chart(barChart1, {
-        type: 'bar',  // Bar chart
+    const searchParam: FGetEntityExpression = new FGetEntityExpression();
+    const fseachParm1: FSearchExpression = new FSearchExpression();
+    searchParam.skipCount = 0
+    searchParam.orderBy = "plannedQty desc"
+    fseachParm1.propName = "status"
+    fseachParm1.searchOperator = 0
+    fseachParm1.searchAndOrOperator = 0
+    fseachParm1.value1 = "Planlanmis"
+    searchParam.searchExpressionList = [fseachParm1]
+    // İlk olarak veriyi alıyoruz ve sonra grafikleri güncelliyoruz
+    this.qualityService.countOrders(searchParam).pipe(
+      finalize(() => { }),
+      map((datas: any) => ({
+        data: datas.items,
+        totalCount: datas.totalCount,
+        summary: null,
+        groupCount: 0
+      }))
+    ).toPromise().then((result: any) => {
+      this.categoryData = result.data;
+      const data = result.data;
+      console.log(data);
+      const barChart1 = document.getElementById('barCharPlanlanmis') as HTMLCanvasElement;
+      const chart = new Chart(barChart1, {
+        type: 'bar',
         data: {
-          labels: data.map(item => item.category),
+          labels: data.map(item => item.itemCode),
           datasets: [{
-            label: '# of Votes',
-            data: data.map(item => item.count),
+            label: 'Üretim Siparişleri Sayısı',
+            data: data.map(item => item.totalQty),
             borderWidth: 1,
-            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-            borderColor: 'rgba(75, 192, 192, 1)'
+            backgroundColor: 'rgba(179, 31, 36, 0.9)',
+            borderColor: '#b31f24',
           }]
         },
         options: {
           scales: {
             y: {
-              beginAtZero: true  // Ensure y-axis starts at 0
+              beginAtZero: true
             }
           },
           responsive: true,
-          onClick: (event: ChartEvent, activeElements: any[], chart: Chart) => {
-            this.onChartClick(event, chart);
-          },
+          onClick: () => {
+            barChart1.onclick = (event) => {
+              const activePoints = chart.getElementsAtEventForMode(
+                event,
+                'nearest',
+                { intersect: true },
+                true
+              );
+
+              if (activePoints.length) {
+                const dataIndex = activePoints[0].index;
+                // categoryData dizisinden o index'e karşılık gelen veriyi alalım
+                const clickedData = this.categoryData[dataIndex];
+                console.log("Tıklanan Veri:", clickedData);
+                this.createOrUpdatePieChart(event, clickedData);
+              };
+            }
+          }
         }
       });
     });
   }
 
-  onChartClick(event: ChartEvent, chart: Chart): void {
+  createOrUpdatePieChart(event: any, clickedData: any): void {
     const pieChart1 = document.getElementById('pieChart1') as HTMLCanvasElement;
-    new Chart(pieChart1, {
-      type: 'pie',
-      data: {
-        labels: [
-          'Red',
-          'Blue',
-          'Yellow'
-        ],
-        datasets: [{
-          label: 'My First Dataset',
-          data: [300, 50, 100],
-          backgroundColor: [
-            'rgb(255, 99, 132)',
-            'rgb(54, 162, 235)',
-            'rgb(255, 205, 86)'
-          ],
-          hoverOffset: 4
-        }]
-      }
-    });
-    const chartInstance = chart;
-    if (event.native) {
-      const points = chartInstance.getElementsAtEventForMode(
-        event.native as Event, 'nearest', { intersect: true }, true
-      );
-
-      if (points.length) {
-        const firstPoint = points[0];
-        const datasetIndex = firstPoint.datasetIndex;
-        const dataIndex = firstPoint.index;
-
-        // Logging label and value to check the values being clicked
-        const label = chartInstance.data.labels?.[dataIndex];
-        const value = chartInstance.data.datasets[datasetIndex].data[dataIndex];
-        console.log('Clicked label:', label);
-        console.log('Clicked value:', value);
-
-        if (label && value !== undefined) {
-          this.updatePieChart(label as string, value as number);
+    if (!this.showPieChart) {
+      this.pieChartInstance = new Chart(pieChart1, {
+        type: 'pie',
+        data: {
+          labels: clickedData.companies.map(item => item.cardName),
+          datasets: [{
+            label: 'Şirket Dağılımı',
+            data: clickedData.companies.map(item => item.plannedQty),
+            backgroundColor: [
+              'rgb(255, 99, 132)',
+              'rgb(54, 162, 235)',
+              'rgb(255, 205, 86)'
+            ],
+            hoverOffset: 4
+          }]
         }
-      }
+      });
+      this.showPieChart = true
+    } else {
+      this.pieChartInstance.data.labels = clickedData.companies.map(item => item.cardName);
+      this.pieChartInstance.data.datasets[0].data = clickedData.companies.map(item => item.plannedQty);
+      this.pieChartInstance.update();
     }
-  }
-
-  updatePieChart(label: string, value: number): void {
-    //this.pieChartData.labels = [label]; // Set the clicked label
-    //this.pieChartData.datasets[0].data = [value]; // Set the clicked value
-    // Force the pie chart to re-render
-    this.showPieChart = false;
-    setTimeout(() => {
-      this.showPieChart = true;
-    }, 0);
   }
 }
