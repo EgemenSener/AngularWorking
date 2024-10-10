@@ -18,6 +18,7 @@ export class ChartComponent implements AfterViewInit {
   categoryData: any[] = [];
   public showPieChart = false;
   pieChartInstance: any;
+  chart: any;
 
   constructor(
     @Inject(PLATFORM_ID) private platformId: any,
@@ -38,7 +39,7 @@ export class ChartComponent implements AfterViewInit {
       this.categoryData = data;
       console.log(data);
       const barChart1 = document.getElementById('barCharPlanlanmis') as HTMLCanvasElement;
-      const chart = new Chart(barChart1, {
+      this.chart = new Chart(barChart1, {
         type: 'bar',
         data: {
           labels: data.map(item => item.itemCode),
@@ -51,6 +52,7 @@ export class ChartComponent implements AfterViewInit {
           }]
         },
         options: {
+          maintainAspectRatio: false,
           scales: {
             y: {
               beginAtZero: true
@@ -59,7 +61,7 @@ export class ChartComponent implements AfterViewInit {
           responsive: true,
           onClick: () => {
             barChart1.onclick = (event) => {
-              const activePoints = chart.getElementsAtEventForMode(
+              const activePoints = this.chart.getElementsAtEventForMode(
                 event,
                 'nearest',
                 { intersect: true },
@@ -107,5 +109,7 @@ export class ChartComponent implements AfterViewInit {
       this.pieChartInstance.data.datasets[0].data = clickedData.companies.map((item: { plannedQty: any; }) => item.plannedQty);
       this.pieChartInstance.update();
     }
+    const parentNode = this.chart.canvas.parentNode as HTMLElement;
+    parentNode.style.width = '40vh';
   }
 }
